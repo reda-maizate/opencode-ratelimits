@@ -11,11 +11,21 @@ An [OpenCode](https://opencode.ai) plugin that displays your provider's rate lim
 
 ## Install
 
+Install from npm (the plugin is [published there](https://www.npmjs.com/package/opencode-ratelimits)):
+
 ```sh
-opencode plugin add npm:opencode-ratelimits
+opencode plugin add opencode-ratelimits
 ```
 
-Or from GitHub:
+Or add it to your config — global (`~/.config/opencode/opencode.json`) or per-project (`opencode.json`):
+
+```jsonc
+{
+  "plugins": ["opencode-ratelimits"]
+}
+```
+
+Or install from GitHub:
 
 ```sh
 opencode plugin add github:reda-maizate/opencode-ratelimits
@@ -27,6 +37,8 @@ Restart the TUI after installing (the TUI client loads plugins on startup):
 # quit the TUI, then reopen it
 opencode
 ```
+
+Update later with `opencode plugin update`.
 
 ## How it works
 
@@ -62,14 +74,6 @@ bun install    # dev dependencies (types and tests only — the plugin itself ha
 bun run typecheck
 bun test
 ```
-
-## Publishing
-
-```sh
-npm publish
-```
-
-Publishing requires 2FA. Note that `npm stage publish` (with "stage") does **not** publish — it stages the version for a later approval (`npm stage approve <id>`), so use plain `npm publish` unless you deliberately want the review step.
 
 ## License
 
