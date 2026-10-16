@@ -1,0 +1,12 @@
+{
+  "name": "opencode-ratelimits",
+  "version": "1.0.0",
+  "description": "Display provider rate limits (x-ratelimit-* headers) in the OpenCode TUI footer",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./tui": "./tui.tsx"
+  },
+  "keywords": ["opencode", "opencode-plugin", "rate-limits"],
+  "license": "MIT"
+}
