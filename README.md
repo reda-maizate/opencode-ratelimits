@@ -9,6 +9,12 @@ An [OpenCode](https://opencode.ai) plugin that displays your provider's rate lim
 ## Install
 
 ```sh
+opencode plugin add npm:opencode-ratelimits
+```
+
+Or from GitHub:
+
+```sh
 opencode plugin add github:reda-maizate/opencode-ratelimits
 ```
 
