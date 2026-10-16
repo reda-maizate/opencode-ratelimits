@@ -1,6 +1,9 @@
 # opencode-ratelimits
 
-An [OpenCode](https://opencode.ai) plugin that displays your provider's rate limits (`x-ratelimit-*` headers) in the TUI footer.
+[![npm version](https://img.shields.io/npm/v/opencode-ratelimits.svg)](https://www.npmjs.com/package/opencode-ratelimits)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
+An [OpenCode](https://opencode.ai) plugin that displays your provider's rate limits (`x-ratelimit-*` headers) in the TUI footer. Published on [npm](https://www.npmjs.com/package/opencode-ratelimits).
 
 ```
 ⚡ 599/600 req · 858K/1M tok · reset 8.5s
@@ -38,7 +41,8 @@ If the footer never appears, your provider likely doesn't send rate-limit header
 
 ## Requirements
 
-Your provider must return OpenAI-compatible rate-limit headers:
+- **OpenCode v2 or later** — the plugin uses the v2 plugin system (separate server and TUI entrypoints communicating over RPC).
+- Your provider must return OpenAI-compatible rate-limit headers:
 
 | Header | Example |
 |---|---|
@@ -58,6 +62,14 @@ bun install    # dev dependencies (types and tests only — the plugin itself ha
 bun run typecheck
 bun test
 ```
+
+## Publishing
+
+```sh
+npm publish
+```
+
+Publishing requires 2FA. Note that `npm stage publish` (with "stage") does **not** publish — it stages the version for a later approval (`npm stage approve <id>`), so use plain `npm publish` unless you deliberately want the review step.
 
 ## License
 
