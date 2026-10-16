@@ -1,6 +1,6 @@
 {
   "name": "opencode-ratelimits",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Display provider rate limits (x-ratelimit-* headers) in the OpenCode TUI footer",
   "type": "module",
   "exports": {

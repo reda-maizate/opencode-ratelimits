@@ -1,3 +1,4 @@
+/** @jsxImportSource @opentui/solid */
 import { Plugin } from "@opencode/plugin/tui"
 import { Show, createSignal } from "solid-js"
 import { formatDuration, formatTokens } from "./format"
