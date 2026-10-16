@@ -1,76 +1,77 @@
 import { Plugin } from "@opencode/plugin/tui"
-import { Show, createSignal, onCleanup } from "solid-js"
+import { Show, createSignal } from "solid-js"
+import { formatDuration, formatTokens } from "./format"
+import { isRateLimitEntry, parseEntries, rateLimitsRpc, type RateLimitEntry } from "./shared"
 
-interface RateLimits {
-  limitRequests: string | null
-  remainingRequests: string | null
-  resetRequests: string | null
-  limitTokens: string | null
-  remainingTokens: string | null
-  resetTokens: string | null
-  timestamp: number
-}
-
-const DATA_FILE = "/tmp/opencode-ratelimits.json"
-
-function formatTokens(value: string | null | undefined): string {
-  if (!value) return "—"
-  const n = parseInt(value, 10)
-  if (isNaN(n)) return value
-  if (n >= 1_000_000) {
-    const m = n / 1_000_000
-    return `${Number.isInteger(m) ? m : m.toFixed(1)}M`
-  }
-  if (n >= 1_000) return `${Math.round(n / 1_000)}K`
-  return String(n)
-}
-
-function formatDuration(value: string | null | undefined): string {
-  if (!value) return "—"
-  const stripped = value.replace(/\d+ms$/, "")
-  return stripped || "0s"
-}
+/** Hide the footer after this long without a response for the active provider. */
+const STALE_MS = 10 * 60_000
+/** How often the reset countdown is re-evaluated. */
+const CLOCK_MS = 1_000
 
 export default Plugin.define({
   id: "ratelimits",
   setup(context) {
-    const [limits, setLimits] = createSignal<RateLimits | null>(null)
+    const [entries, setEntries] = createSignal<Record<string, RateLimitEntry>>({})
+    const [now, setNow] = createSignal(Date.now())
 
-    async function readLimits() {
-      try {
-        const file = Bun.file(DATA_FILE)
-        const data = await file.json()
-        if (data && typeof data === "object" && "limitRequests" in data) {
-          setLimits(data as RateLimits)
-        }
-      } catch {}
-    }
+    const client = context.client.rpc(rateLimitsRpc)
 
-    const interval = setInterval(readLimits, 2000)
+    // Initial state: fills the footer if responses arrived before the TUI started.
+    void client
+      .entries({})
+      .then((value) => {
+        const parsed = parseEntries(value)
+        if (parsed !== null) setEntries(parsed)
+      })
+      .catch(() => {
+        // The server plugin is unavailable (older host, disabled) — nothing to show yet.
+      })
 
-    const stopEvent = context.data.on("session.execution.succeeded", readLimits)
-
-    void readLimits()
-
-    onCleanup(() => {
-      clearInterval(interval)
-      stopEvent()
+    const stopEvents = client.events.on("updated", (event) => {
+      const entry = event.data
+      if (!isRateLimitEntry(entry)) return
+      setEntries((previous) => ({ ...previous, [entry.providerID]: entry }))
     })
 
-    return context.ui.slot({
+    const clock = setInterval(() => setNow(Date.now()), CLOCK_MS)
+
+    const stopSlot = context.ui.slot({
       append: "prompt.footer.status",
-      render: () => (
-        <Show when={limits()}>
-          <text fg={context.theme.text.base}>
-            {"⚡ "}
-            {limits()!.remainingRequests ?? "—"}/{limits()!.limitRequests ?? "—"} req
-            {" · "}
-            {formatTokens(limits()!.remainingTokens)}/{formatTokens(limits()!.limitTokens)} tok
-            {" · "}
-            reset {formatDuration(limits()!.resetTokens)}
-          </text>
-        </Show>
-      ),
+      render: (input) => {
+        const entry = () => {
+          if (input.sessionID === undefined) return undefined
+          const providerID = context.data.session.get(input.sessionID)?.model?.providerID
+          return providerID === undefined ? undefined : entries()[providerID]
+        }
+        const visible = () => {
+          const current = entry()
+          return current !== undefined && now() - current.timestamp < STALE_MS ? current : undefined
+        }
+        const countdown = (current: RateLimitEntry) => {
+          const reset = current.resetTokensMs ?? current.resetRequestsMs
+          return formatDuration(reset === null ? null : Math.max(0, reset - (now() - current.timestamp)))
+        }
+        return (
+          <Show when={visible()} keyed>
+            {(current) => (
+              <text fg={context.theme.text.base}>
+                {"⚡ "}
+                {current.remainingRequests ?? "—"}/{current.limitRequests ?? "—"} req
+                {" · "}
+                {formatTokens(current.remainingTokens)}/{formatTokens(current.limitTokens)} tok
+                {" · "}
+                reset {countdown(current)}
+              </text>
+            )}
+          </Show>
+        )
+      },
     })
+
+    return () => {
+      clearInterval(clock)
+      stopEvents()
+      stopSlot()
+    }
   },
 })

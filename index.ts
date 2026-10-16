@@ -1,41 +1,26 @@
 import { Plugin } from "@opencode/plugin"
-
-export interface RateLimits {
-  limitRequests: string | null
-  remainingRequests: string | null
-  resetRequests: string | null
-  limitTokens: string | null
-  remainingTokens: string | null
-  resetTokens: string | null
-  timestamp: number
-}
-
-const DATA_FILE = "/tmp/opencode-ratelimits.json"
+import { entryFromHeaders, rateLimitsRpc, type RateLimitEntry } from "./shared"
 
 export default Plugin.define({
   id: "ratelimits",
   async setup(ctx) {
-    const registration = await ctx.session.hook("http.response", async (event) => {
-      if (event.kind !== "primary") return
+    const entries = new Map<string, RateLimitEntry>()
 
-      const h = event.response.headers
-      const limits: RateLimits = {
-        limitRequests: h.get("x-ratelimit-limit-requests"),
-        remainingRequests: h.get("x-ratelimit-remaining-requests"),
-        resetRequests: h.get("x-ratelimit-reset-requests"),
-        limitTokens: h.get("x-ratelimit-limit-tokens"),
-        remainingTokens: h.get("x-ratelimit-remaining-tokens"),
-        resetTokens: h.get("x-ratelimit-reset-tokens"),
-        timestamp: Date.now(),
-      }
-
-      if (!limits.limitRequests && !limits.limitTokens) return
-
-      try {
-        await Bun.write(DATA_FILE, JSON.stringify(limits))
-      } catch {}
+    // Registered first, so the TUI can query state even before the first response arrives.
+    const rpc = await ctx.rpc.register(rateLimitsRpc, {
+      entries: async () => ({ entries: Object.fromEntries(entries) }),
     })
 
-    return () => void registration.dispose()
+    const hook = await ctx.session.hook("http.response", (event) => {
+      if (event.kind !== "primary") return
+      const entry = entryFromHeaders((name) => event.response.headers.get(name), event.model, Date.now())
+      if (entry === null) return
+      entries.set(entry.providerID, entry)
+      return rpc.events
+        .emit("updated", entry)
+        .catch((error) => console.error("[ratelimits] failed to publish rate-limit update", error))
+    })
+
+    return () => void Promise.all([rpc.dispose(), hook.dispose()])
   },
 })

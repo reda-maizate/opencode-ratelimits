@@ -1,12 +1,48 @@
 {
   "name": "opencode-ratelimits",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Display provider rate limits (x-ratelimit-* headers) in the OpenCode TUI footer",
   "type": "module",
   "exports": {
     ".": "./index.ts",
     "./tui": "./tui.tsx"
   },
-  "keywords": ["opencode", "opencode-plugin", "rate-limits"],
-  "license": "MIT"
+  "files": [
+    "index.ts",
+    "tui.tsx",
+    "shared.ts",
+    "format.ts",
+    "tsconfig.json"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "rate-limits"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reda-maizate/opencode-ratelimits.git"
+  },
+  "bugs": {
+    "url": "https://github.com/reda-maizate/opencode-ratelimits/issues"
+  },
+  "homepage": "https://github.com/reda-maizate/opencode-ratelimits#readme",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "peerDependencies": {
+    "@opencode/plugin": "^2.0.27 || ^0.0.0-dev"
+  },
+  "devDependencies": {
+    "@opencode/plugin": "^2.0.31",
+    "@opencode/theme": "^2.0.31",
+    "@opentui/core": "^0.6.6",
+    "@opentui/solid": "^0.6.6",
+    "@types/bun": "^1.4.0",
+    "effect": "^4.0.1",
+    "solid-js": "^1.9.15",
+    "typescript": "^5.8.2"
+  }
 }
